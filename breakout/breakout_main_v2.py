@@ -4,11 +4,17 @@ import torch.nn.functional as F
 import torch
 from collections import deque
 import numpy as np
-import math
 import random
 from collections import namedtuple
 from PIL import Image, ImageDraw
 import os
+from tqdm import tqdm
+import logging
+
+##LOGGING PROPERTY
+LOG_FILE = 'logfile'
+CONSOLE_LEVEL = logging.INFO
+LOGFILE_LEVEL = logging.DEBUG
 
 
 class myDQN(nn.Module):
@@ -116,27 +122,30 @@ class myHistory(object):
 
 
 class DQNSolver():
-    def __init__(self, n_episodes=10000, max_env_steps=None, gamma=1.0, layers=[100],
-                 epsilon=1.0, epsilon_min=0.01, class_num=4, epsilon_log_decay=0.995,
-                 alpha=0.01, alpha_decay=0.01, batch_size=64, monitor=True, quiet=False, device='cpu',
+    def __init__(self, n_episodes=1000, max_env_steps=None, gamma=1.0, layers=[100], run_start=1000,
+                 epsilon=1.0, epsilon_min=0.01, class_num=4, epsilon_log_decay=0.995, memory_size = 100000,
+                 alpha=0.000125, alpha_decay=0.01, batch_size=32, freq_step=4, quiet=False, device='cpu',
                  pretrained=None, rendering=False, history_size=2, resize_unit=(161, 144)):
         self.device = device
-        self.memory = memoryDataset(maxlen=100000, device=device)
+        self.memory = memoryDataset(maxlen=memory_size, device=device)
+        self.memory_size = memory_size
         self.env = gym.make('BreakoutDeterministic-v4')
         self.n_episodes = n_episodes
         self.gamma = gamma
         self.epsilon = epsilon
         self.epsilon_min = epsilon_min
+        self.run_start = run_start
         self.epsilon_decay = epsilon_log_decay
         self.alpha = alpha
         self.alpha_decay = alpha_decay
         self.batch_size = batch_size
+        self.freq_step = freq_step
         self.quiet = quiet
         self.layers = layers
         self.class_num = class_num
         self.init_dim = 5185 + (2 * history_size)
         self.model = myDQN(self.init_dim, layers, class_num, self.device)
-        self.optimizer = optim.Adam(params=self.model.parameters(), lr=alpha, weight_decay=alpha_decay)
+        self.optimizer = optim.Adam(params=self.model.parameters(), lr=alpha)
         self.resize_unit = resize_unit
         self.history_size = history_size
 
@@ -145,6 +154,14 @@ class DQNSolver():
         if not os.path.isdir(save_folder):
             os.mkdir(save_folder)
         self.save_path = os.path.join(save_folder, 'model.pkl')
+
+        if not logging.getLogger() == None:
+            for handler in logging.getLogger().handlers[:]:  # make a copy of the list
+                logging.getLogger().removeHandler(handler)
+        logging.basicConfig(filename=LOG_FILE, level=LOGFILE_LEVEL) #logging의 config 변경
+        console = logging.StreamHandler() #logging을 콘솔화면에 출력
+        console.setLevel(CONSOLE_LEVEL) # log level 설정
+        logging.getLogger().addHandler(console) #logger 인스턴스에 콘솔창의 결과를 핸들러에 추가한다.
 
     def choose_action(self, history, epsilon=None):
         if epsilon is not None and np.random.random() <= epsilon:
@@ -156,7 +173,10 @@ class DQNSolver():
                 return int(action.max(0).indices.numpy())
 
     def get_epsilon(self, t):
-        return max(self.epsilon_min, min(self.epsilon, 1.0 - math.log10((t + 1) * self.epsilon_decay)))
+        epsilon =  self.epsilon_min + max(0, (self.epsilon - self.epsilon_min)*(self.memory_size - max(0, t - self.run_start)) /self.memory_size )
+        #epsilon = max(self.epsilon_min, min(self.epsilon, 1.0 - math.log10((t + 1) * self.epsilon_decay)))
+
+        return epsilon
 
     def replay(self, batch_size):
         batch = self.memory.sample(batch_size)
@@ -178,20 +198,21 @@ class DQNSolver():
         loss = F.mse_loss(state_action_values, target_state_value)
         loss.backward()
         self.optimizer.step()
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
+
+
 
     def run(self):
-        scores = deque(maxlen=100)
-        lives = deque(maxlen=100)
-        for episode in range(self.n_episodes):
+        scores = deque(maxlen=10)
+        max_score = 0.0
+        i = 0
+        progress_bar = tqdm(range(self.n_episodes))
+        for episode in progress_bar:
             score = 0
             state = self.env.reset()
             history = myHistory(self.history_size, state, self.device)
             done = False
-            i = 0
             while not done:
-                action = self.choose_action(history, self.get_epsilon(episode))
+                action = self.choose_action(history, self.get_epsilon(i))
                 next_state, reward, done, life = self.env.step(action)
                 state = history.get_state()
                 history.push(next_state)
@@ -199,25 +220,37 @@ class DQNSolver():
                 life = life['ale.lives']
                 self.memory.push(state, action, reward, next_state, done, life)
                 score += reward
+                i = i+1
+                if i>self.run_start and i%self.freq_step == 0:
+                    self.replay(self.batch_size)
+
+            if self.epsilon > self.epsilon_min:
+                self.epsilon *= self.epsilon_decay
 
             scores.append(score)
-            lives.append(life)
             mean_score = np.mean(scores)  ##최근 100개가 버티는 시간의 Mean이 조건을 만족하면 멈춤..
-            mean_life = np.mean(lives)
+            if max_score < mean_score:
+                max_score = mean_score
+
             if life > 0 and done:
-                if not self.quiet: print('{} episodes. Solved after {} trials '.format(episode, episode - 100))
+                if not self.quiet:
+                    progress_bar.set_postfix_str('{} episodes. Solved after {} trials '.format(episode, episode - 10))
+                    logging.debug('{} episodes. Solved after {} trials '.format(episode, episode - 10))
                 SAVE_PATH = '/model/model.pkl'
                 self.save_model()
 
                 return episode - 100
-            if episode % 100 == 0 and not self.quiet:
-                print('[Episode {}] - last 100 episodes score : {}, life : {}, epsilon : {}'.format(episode, mean_score,
-                                                                                                    mean_life,
-                                                                                                    self.epsilon))
+            if episode % 10 == 0 and not self.quiet:
+                progress_bar.set_postfix_str('[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' %(episode, mean_score,
+                                                                                                    max_score,
+                                                                                                    self.get_epsilon(episode)))
+                logging.debug('[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' %(episode, mean_score,
+                                                                                                    max_score,
+                                                                                                    self.get_epsilon(episode)))
 
-            self.replay(self.batch_size)
-
-        if not self.quiet: print('Did not solve after {} episodes'.format(episode))
+        if not self.quiet:
+            progress_bar.set_postfix_str('Did not solve after {} episodes'.format(episode))
+            logging.debug('Did not solve after {} episodes'.format(episode))
         return episode
 
     def save_model(self):
@@ -263,7 +296,8 @@ class DQNSolver():
 if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # device = 'cpu'
-    layers = [1000, 250]
+    print(device)
+    layers = [250]
     class_num = 4
     agent = DQNSolver(layers=layers, class_num=class_num, device=device)
     agent.run()
