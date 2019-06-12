@@ -11,6 +11,7 @@ import os
 from argparse import ArgumentParser
 from tqdm import tqdm
 import logging
+from skimage.transform import rescale
 
 ##LOGGING PROPERTY
 LOG_FILE = 'logfile'
@@ -23,23 +24,23 @@ def build_parser():
     parser.add_argument("--env",dest="env", metavar="env", default="BreakoutDeterministic-v4")
     parser.add_argument("--memory_size", dest="memory_size", metavar="memory_size", default=1000000)
     parser.add_argument("--update_freq", dest="update_freq", metavar="update_freq", default=4)
-    parser.add_argument("--learn_start", dest="learn_start", metavar="learn_start", default=50000)
+    parser.add_argument("--learn_start", dest="learn_start", metavar="learn_start", default=500)#50000
     parser.add_argument("--history_size", dest="history_size", metavar="history_size", default=2)
 
 
     ##Learning rate
-    parser.add_argument("--batck_size", dest="batck_size", metavar="batck_size", default=32)
+    parser.add_argument("--batch_size", dest="batch_size", metavar="batch_size", default=32)
     parser.add_argument("--ep", dest="ep", metavar="ep", default=1)
     parser.add_argument("--eps_end", dest="eps_end", metavar="eps_end", default=0.1)
-    parser.add_argument("--eps_endt", dest="eps_endt", metavar="eps_endt", default=1000000)
+    parser.add_argument("--eps_endt", dest="eps_endt", metavar="eps_endt", default=100000)
     parser.add_argument("--lr", dest="lr", metavar="lr", default=0.00025)
     parser.add_argument("--discount", dest="discount", metavar="discount", default=0.99)
 
 
     parser.add_argument("--agent_type", dest="agent_type", metavar="agent_type", default="DQN_ln")
     parser.add_argument("--max_steps", dest="max_steps", metavar="max_steps", default=50000000)
-    parser.add_argument("--eval_freq", dest="eval_freq", metavar="eval_freq", default=250000)
-    parser.add_argument("--eval_steps", dest="eval_steps", metavar="eval_steps", default=125000)
+    parser.add_argument("--eval_freq", dest="eval_freq", metavar="eval_freq", default=3000)
+    parser.add_argument("--eval_steps", dest="eval_steps", metavar="eval_steps", default=1000)
     return parser
 
 
@@ -65,17 +66,17 @@ class memoryDataset(object):
     def __init__(self, maxlen, device):
         self.memory = deque(maxlen=maxlen)
         self.subset = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done', 'life'))
-        self.device = device
+
 
     def push(self, state, action, next_state, reward, done, life):
-        state = torch.tensor(state, dtype=torch.float).to(self.device)
-        action = torch.tensor([action], dtype=torch.long).to(self.device)
-        reward = torch.tensor(reward, dtype=torch.float).to(self.device)
-        next_state = torch.tensor(next_state, dtype=torch.float).to(self.device)
+        state = torch.tensor(state, dtype=torch.float)
+        action = torch.tensor([action], dtype=torch.long)
+        reward = torch.tensor(reward, dtype=torch.float)
+        next_state = torch.tensor(next_state, dtype=torch.float)
         ##False:0, True:1
-        done = torch.tensor([done], dtype=torch.long).to(self.device)
+        done = torch.tensor([done], dtype=torch.long)
         ##Life : 0,1,2,3,4,5
-        life = torch.tensor(life, dtype=torch.float).to(self.device)
+        life = torch.tensor(life, dtype=torch.float)
         self.memory.append(self.subset(state, action, reward, next_state, done, life))
 
     def __len__(self):
@@ -102,7 +103,8 @@ class historyDataset(object):
     def convert_channel(self, img):
         # input type : |img| = (Height, Width, channel)
         # remove useless item
-        img = img[32:190, 8:152]
+        img = img[32:193, 8:152]
+        img = rescale(img, 1.0 / 2.0, anti_aliasing=False, multichannel=False)
 
         # conver channel(3) -> channel(1)
         img = np.any(img, axis=2)
@@ -126,11 +128,11 @@ class historyDataset(object):
         temp = [1]
         for img in imgs:
             temp = temp * img
-        output = np.append(output, temp[25:61].reshape(-1))
+        output = np.append(output, temp[12:31].reshape(-1))
 
         # Find Ball Position
         for img in imgs:
-            diff = np.where(np.diff([img[:-1] > temp[:-1]]))
+            diff = np.where(np.diff([img[:-2] > temp[:-2]]))
             if len(diff[0]) > 0:
                 output = np.append(output, np.mean(diff[1]) / self.height)
                 output = np.append(output, np.mean(diff[2]) / self.width)
@@ -154,7 +156,7 @@ class DQNSolver():
         self.history_size = config.history_size
 
 
-        self.batck_size = config.batck_size
+        self.batch_size = config.batch_size
         self.ep = config.ep
         self.eps_end = config.eps_end
         self.eps_endt = config.eps_endt
@@ -163,15 +165,15 @@ class DQNSolver():
 
         self.agent_type = config.agent_type
         self.max_steps = config.max_steps
-        self.eval_freq = self.eval_freq
-        self.eval_steps = self.eval_steps
+        self.eval_freq = config.eval_freq
+        self.eval_steps = config.eval_steps
 
 
         ##Breakout Setting
-        self.layers = [1000,200]
+        self.layers = [500,250]
         self.class_num = 4
-        self.init_dim = 5185 + (2 * config.history_size)
-        self.resize_unit = (161, 144)
+        self.init_dim = 1369 + (2 * config.history_size)
+        #self.resize_unit = (161, 144)
 
         ##INIT SETTING
         self.memory = memoryDataset(maxlen=config.memory_size, device=config.device)
@@ -202,11 +204,17 @@ class DQNSolver():
 
     def replay(self, batch_size):
         batch = self.memory.sample(batch_size)
-        state = torch.stack(batch.state)
-        action = torch.stack(batch.action)
-        next_state = torch.stack(batch.next_state)
+
+        ##device 변경 cpu to gpu
+        state = torch.stack(batch.state).to(self.device)
+        action = torch.stack(batch.action).to(self.device)
+        next_state = torch.stack(batch.next_state).to(self.device)
         reward = torch.stack(batch.reward)
-        done = torch.stack(batch.done)
+
+        ## reward rescale 0 ~ 1
+        reward = reward.type(torch.bool).type(torch.float).to(self.device)
+
+        done = torch.stack(batch.done).to(self.device)
         life = torch.stack(batch.life)
         with torch.no_grad():
             next_state_action_values = self.model(next_state)
@@ -220,6 +228,8 @@ class DQNSolver():
         loss = F.mse_loss(state_action_values, target_state_value)
         loss.backward()
         self.optimizer.step()
+
+
 
     def run(self):
         progress_bar = tqdm(range(self.max_steps))
@@ -258,7 +268,7 @@ class DQNSolver():
 
             score += reward
 
-            if step % self.eval_freq == 0:
+            if step > self.eval_steps and step % self.eval_freq == 0:
                 mean_score = np.mean(scores)
                 progress_bar.set_postfix_str(
                     '[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
