@@ -24,15 +24,15 @@ def build_parser():
     parser.add_argument("--env",dest="env", metavar="env", default="BreakoutDeterministic-v4")
     parser.add_argument("--memory_size", dest="memory_size", metavar="memory_size", default=1000000)
     parser.add_argument("--update_freq", dest="update_freq", metavar="update_freq", default=4)
-    parser.add_argument("--learn_start", dest="learn_start", metavar="learn_start", default=500)#50000
+    parser.add_argument("--learn_start", dest="learn_start", metavar="learn_start", default=50000)
     parser.add_argument("--history_size", dest="history_size", metavar="history_size", default=2)
-
+    parser.add_argument("--target_update", dest="target_update", metavar="target_update", default=10000)
 
     ##Learning rate
     parser.add_argument("--batch_size", dest="batch_size", metavar="batch_size", default=32)
     parser.add_argument("--ep", dest="ep", metavar="ep", default=1)
     parser.add_argument("--eps_end", dest="eps_end", metavar="eps_end", default=0.1)
-    parser.add_argument("--eps_endt", dest="eps_endt", metavar="eps_endt", default=100000)
+    parser.add_argument("--eps_endt", dest="eps_endt", metavar="eps_endt", default=1000000)
     parser.add_argument("--lr", dest="lr", metavar="lr", default=0.00025)
     parser.add_argument("--discount", dest="discount", metavar="discount", default=0.99)
 
@@ -177,8 +177,11 @@ class DQNSolver():
 
         ##INIT SETTING
         self.memory = memoryDataset(maxlen=config.memory_size, device=config.device)
-        self.model = DQN_ln(self.init_dim, self.layers, self.class_num, self.device)
-        self.optimizer = optim.Adam(params=self.model.parameters(), lr=self.lr)
+
+        self.policy_model = DQN_ln(self.init_dim, self.layers, self.class_num, self.device)
+        self.target_model = DQN_ln(self.init_dim, self.layers, self.class_num, self.device)
+
+        self.optimizer = optim.Adam(params=self.policy_model.parameters(), lr=self.lr)
 
         ##INIT LOGGER
         if not logging.getLogger() == None:
@@ -195,7 +198,7 @@ class DQNSolver():
         else:
             with torch.no_grad():
                 state = torch.tensor(history.get_state(), dtype=torch.float).to(self.device)
-                action = self.model(state) if self.device == 'cpu' else self.model(state).cpu()
+                action = self.target_model(state) if self.device == 'cpu' else self.target_model(state).cpu()
                 return int(action.max(0).indices.numpy())
 
     def get_epsilon(self, t):
@@ -217,14 +220,14 @@ class DQNSolver():
         done = torch.stack(batch.done).to(self.device)
         life = torch.stack(batch.life)
         with torch.no_grad():
-            next_state_action_values = self.model(next_state)
+            next_state_action_values = self.policy_model(next_state)
         next_state_value = torch.max(next_state_action_values, dim=1).values.view(-1, 1)
         reward = reward.view(-1, 1)
         target_state_value = torch.stack([reward + (self.discount * next_state_value), reward], dim=1).squeeze().gather(1,
                                                                                                                      done)
 
         self.optimizer.zero_grad()
-        state_action_values = self.model(state).gather(1, action)
+        state_action_values = self.policy_model(state).gather(1, action)
         loss = F.mse_loss(state_action_values, target_state_value)
         loss.backward()
         self.optimizer.step()
@@ -244,6 +247,10 @@ class DQNSolver():
         max_score = 0
 
         for step in progress_bar:
+
+            ## model update
+            if step > self.learn_start and step % self.target_update == 0:
+                self.target_model.load_state_dict(self.policy_model.state_dict())
 
             ##Terminal
             if done:
@@ -266,7 +273,7 @@ class DQNSolver():
             if step > self.learn_start and step % self.update_freq == 0:
                 self.replay(self.batch_size)
 
-            score += reward
+            score += 1 if reward > 0 else 0
 
             if step > self.eval_steps and step % self.eval_freq == 0:
                 mean_score = np.mean(scores)
