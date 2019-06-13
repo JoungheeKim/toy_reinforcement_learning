@@ -65,10 +65,10 @@ class DQN_ln(nn.Module):
 class memoryDataset(object):
     def __init__(self, maxlen, device):
         self.memory = deque(maxlen=maxlen)
-        self.subset = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done', 'life'))
+        self.subset = namedtuple('Transition', ('state', 'action', 'next_state', 'reward', 'done', 'life', 'terminal'))
 
 
-    def push(self, state, action, next_state, reward, done, life):
+    def push(self, state, action, next_state, reward, done, life, terminal):
         state = torch.tensor(state, dtype=torch.float)
         action = torch.tensor([action], dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float)
@@ -77,7 +77,9 @@ class memoryDataset(object):
         done = torch.tensor([done], dtype=torch.long)
         ##Life : 0,1,2,3,4,5
         life = torch.tensor(life, dtype=torch.float)
-        self.memory.append(self.subset(state, action, reward, next_state, done, life))
+
+        terminal = torch.tensor([terminal], dtype=torch.long)
+        self.memory.append(self.subset(state, action, reward, next_state, done, life, terminal))
 
     def __len__(self):
         return len(self.memory)
@@ -220,12 +222,13 @@ class DQNSolver():
 
         done = torch.stack(batch.done).to(self.device)
         life = torch.stack(batch.life)
+        terminal = torch.stack(batch.terminal).to(self.device)
+
         with torch.no_grad():
             next_state_action_values = self.policy_model(next_state)
         next_state_value = torch.max(next_state_action_values, dim=1).values.view(-1, 1)
         reward = reward.view(-1, 1)
-        target_state_value = torch.stack([reward + (self.discount * next_state_value), reward], dim=1).squeeze().gather(1,
-                                                                                                                     done)
+        target_state_value = torch.stack([reward + (self.discount * next_state_value), reward], dim=1).squeeze().gather(1, terminal)
 
         self.optimizer.zero_grad()
         state_action_values = self.policy_model(state).gather(1, action)
@@ -246,6 +249,7 @@ class DQNSolver():
         score = 0
         episode = 0
         max_score = 0
+        last_life = 0
 
         for step in progress_bar:
 
@@ -253,7 +257,7 @@ class DQNSolver():
             if step > self.learn_start and step % self.target_update == 0:
                 self.target_model.load_state_dict(self.policy_model.state_dict())
 
-            ##Terminal
+            ## game is over
             if done:
                 state = self.env.reset()
                 history = historyDataset(self.history_size, state, self.device)
@@ -261,6 +265,7 @@ class DQNSolver():
                 if score > max_score:
                     max_score = score
                 score = 0
+                last_life = 0
                 episode += 1
 
 
@@ -270,7 +275,16 @@ class DQNSolver():
             history.push(next_state)
             next_state = history.get_state()
             life = life['ale.lives']
-            self.memory.push(state, action, reward, next_state, done, life)
+
+            ## Terminal options
+            if life < last_life:
+                terminal = True
+            else :
+                terminal = False
+            last_life = life
+
+
+            self.memory.push(state, action, reward, next_state, done, life, terminal)
             if step > self.learn_start and step % self.update_freq == 0:
                 self.replay(self.batch_size)
 
