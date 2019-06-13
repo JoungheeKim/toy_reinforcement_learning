@@ -39,8 +39,8 @@ def build_parser():
 
     parser.add_argument("--agent_type", dest="agent_type", metavar="agent_type", default="DQN_ln")
     parser.add_argument("--max_steps", dest="max_steps", metavar="max_steps", default=50000000)
-    parser.add_argument("--eval_freq", dest="eval_freq", metavar="eval_freq", default=3000)
-    parser.add_argument("--eval_steps", dest="eval_steps", metavar="eval_steps", default=1000)
+    parser.add_argument("--eval_freq", dest="eval_freq", metavar="eval_freq", default=5000)
+    parser.add_argument("--eval_steps", dest="eval_steps", metavar="eval_steps", default=50000)
     return parser
 
 
@@ -167,10 +167,11 @@ class DQNSolver():
         self.max_steps = config.max_steps
         self.eval_freq = config.eval_freq
         self.eval_steps = config.eval_steps
+        self.target_update = config.target_update
 
 
         ##Breakout Setting
-        self.layers = [500,250]
+        self.layers = [300,75]
         self.class_num = 4
         self.init_dim = 1369 + (2 * config.history_size)
         #self.resize_unit = (161, 144)
@@ -280,11 +281,11 @@ class DQNSolver():
                 progress_bar.set_postfix_str(
                     '[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
                                                                                        max_score,
-                                                                                       self.get_epsilon(episode)))
+                                                                                       self.get_epsilon(step)))
                 logging.debug('[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
                                                                                                  max_score,
                                                                                                  self.get_epsilon(
-                                                                                                     episode)))
+                                                                                                     step)))
 
 if __name__ == '__main__':
     parser = build_parser()
@@ -294,7 +295,3 @@ if __name__ == '__main__':
     config.device = device
     agent = DQNSolver(config)
     agent.run()
-
-
-
-
