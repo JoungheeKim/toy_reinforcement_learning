@@ -63,6 +63,17 @@ class DQNSolver():
         console.setLevel(CONSOLE_LEVEL) # set log level
         logging.getLogger().addHandler(console)
 
+        ##save options
+        save_folder = os.path.join(os.getcwd(), 'model')
+        if not os.path.isdir(save_folder):
+            os.mkdir(save_folder)
+        self.save_path = os.path.join(save_folder, 'model.pkl')
+
+        self.score_memory = []
+        self.score_save_path = os.path.join(save_folder, 'score')
+
+
+
     def choose_action(self, history, epsilon=None):
         if epsilon is not None and np.random.random() <= epsilon:
             return self.env.action_space.sample()
@@ -104,6 +115,11 @@ class DQNSolver():
         loss.backward()
         self.optimizer.step()
 
+    def save_model(self):
+        param_groups = {}
+        param_groups['model_state_dict'] = self.policy_model.state_dict()
+        torch.save(param_groups, self.save_path)
+
     def run(self):
         progress_bar = tqdm(range(self.max_steps))
         state = self.env.reset()
@@ -130,10 +146,15 @@ class DQNSolver():
                 scores.append(score)
                 if score > max_score:
                     max_score = score
+                    self.save_model()
                 score = 0
                 last_life = 0
                 episode += 1
 
+                if episode % 100 == 0:
+                    self.score_memory.append(np.mean(scores))
+                    if episode % 100000 == 0:
+                        np.save(self.score_save_path, self.score_memory)
 
             action = self.choose_action(history, self.get_epsilon(step))
             next_state, reward, done, life = self.env.step(action)
