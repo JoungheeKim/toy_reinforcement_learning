@@ -12,7 +12,7 @@ def build_parser():
     parser.add_argument("--env",dest="env", metavar="env", default="BreakoutDeterministic-v4")
     parser.add_argument("--memory_size", dest="memory_size", metavar="memory_size", default=1000000)
     parser.add_argument("--update_freq", dest="update_freq", metavar="update_freq", default=4)
-    parser.add_argument("--learn_start", dest="learn_start", metavar="learn_start", default=5000)
+    parser.add_argument("--learn_start", dest="learn_start", metavar="learn_start", default=50000)
     parser.add_argument("--history_size", dest="history_size", metavar="history_size", default=2)
     parser.add_argument("--target_update", dest="target_update", metavar="target_update", default=10000)
 
@@ -26,7 +26,7 @@ def build_parser():
 
 
     parser.add_argument("--agent_type", dest="agent_type", metavar="agent_type", default="DQN_ln")
-    parser.add_argument("--max_steps", dest="max_steps", metavar="max_steps", default=50000000)
+    parser.add_argument("--max_steps", dest="max_steps", metavar="max_steps", default=10000000)
     parser.add_argument("--eval_freq", dest="eval_freq", metavar="eval_freq", default=5000)
     parser.add_argument("--eval_steps", dest="eval_steps", metavar="eval_steps", default=50000)
     return parser

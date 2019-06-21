@@ -10,6 +10,8 @@ import logging
 from model import DQN, DQN_CNN
 from properties import build_parser, CONSOLE_LEVEL, LOG_FILE, LOGFILE_LEVEL
 from repository import historyDataset, memoryDataset
+import sys
+import traceback
 
 
 
@@ -74,6 +76,7 @@ class DQNSolver():
 
 
 
+
     def choose_action(self, history, epsilon=None):
         if epsilon is not None and np.random.random() <= epsilon:
             return self.env.action_space.sample()
@@ -133,60 +136,74 @@ class DQNSolver():
         max_score = 0
         last_life = 0
 
-        for step in progress_bar:
+        try:
+            for step in progress_bar:
 
-            ## model update
-            if step > self.learn_start and step % self.target_update == 0:
-                self.target_model.load_state_dict(self.policy_model.state_dict())
+                ## model update
+                if step > self.learn_start and step % self.target_update == 0:
+                    self.target_model.load_state_dict(self.policy_model.state_dict())
 
-            ## game is over
-            if done:
-                state = self.env.reset()
-                history = historyDataset(self.history_size, state)
-                scores.append(score)
-                if score > max_score:
-                    max_score = score
-                    self.save_model()
-                score = 0
-                last_life = 0
-                episode += 1
+                ## game is over
+                if done:
+                    state = self.env.reset()
+                    history = historyDataset(self.history_size, state)
+                    scores.append(score)
+                    if score > max_score:
+                        max_score = score
+                        self.save_model()
+                    score = 0
+                    last_life = 0
+                    episode += 1
 
-                if episode % 100 == 0:
-                    self.score_memory.append(np.mean(scores))
-                    if episode % 100000 == 0:
-                        np.save(self.score_save_path, self.score_memory)
+                    if episode % 100 == 0:
+                        self.score_memory.append(np.mean(scores))
+                        if episode % 1000 == 0:
+                            np.save(self.score_save_path, self.score_memory)
 
-            action = self.choose_action(history, self.get_epsilon(step))
-            next_state, reward, done, life = self.env.step(action)
-            state = history.get_state()
-            history.push(next_state)
-            next_state = history.get_state()
-            life = life['ale.lives']
+                action = self.choose_action(history, self.get_epsilon(step))
+                next_state, reward, done, life = self.env.step(action)
+                state = history.get_state()
+                history.push(next_state)
+                next_state = history.get_state()
+                life = life['ale.lives']
 
-            ## Terminal options
-            if life < last_life:
-                terminal = True
-            else :
-                terminal = False
-            last_life = life
+                ## Terminal options
+                if life < last_life:
+                    terminal = True
+                else :
+                    terminal = False
+                last_life = life
 
 
-            self.memory.push(state, action, reward, next_state, done, life, terminal)
-            if step > self.learn_start and step % self.update_freq == 0:
-                self.replay(self.batch_size)
+                self.memory.push(state, action, reward, next_state, done, life, terminal)
+                if step > self.learn_start and step % self.update_freq == 0:
+                    self.replay(self.batch_size)
 
-            score += 1 if reward > 0 else 0
+                score += 1 if reward > 0 else 0
 
-            if step > self.eval_steps and step % self.eval_freq == 0:
-                mean_score = np.mean(scores)
-                progress_bar.set_postfix_str(
-                    '[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
-                                                                                       max_score,
-                                                                                       self.get_epsilon(step)))
-                logging.debug('[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
-                                                                                                 max_score,
-                                                                                                 self.get_epsilon(
-                                                                                                     step)))
+                if step > self.eval_steps and step % self.eval_freq == 0:
+                    mean_score = np.mean(scores)
+                    progress_bar.set_postfix_str(
+                        '[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
+                                                                                           max_score,
+                                                                                           self.get_epsilon(step)))
+                    logging.debug('[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
+                                                                                                     max_score,
+                                                                                                     self.get_epsilon(
+                                                                                                         step)))
+        except Exception as e:
+            # Get current system exception
+            ex_type, ex_value, ex_traceback = sys.exc_info()
+
+            # Extract unformatter stack traces as tuples
+            trace_back = traceback.extract_tb(ex_traceback)
+
+            logging.warning("Exception type : %s " % ex_type.__name__)
+            logging.warning("Exception message : %s" % ex_value)
+            for trace in trace_back:
+                logging.warning("File : %s , Line : %d, Func.Name : %s, Message : %s" % (
+                trace[0], trace[1], trace[2], trace[3]))
+
 
 if __name__ == '__main__':
     parser = build_parser()
