@@ -73,11 +73,17 @@ class DQNSolver():
             os.mkdir(save_folder)
         self.save_path = os.path.join(save_folder, 'model.pkl')
 
-        self.score_memory = []
-        self.score_save_path = os.path.join(save_folder, 'score_text')
+        self.test_score_memory = []
+        self.test_score_save_path = os.path.join(save_folder, 'test_score')
 
-        self.length_memory = []
-        self.length_save_path = os.path.join(save_folder, 'length_test')
+        self.test_length_memory = []
+        self.test_length_save_path = os.path.join(save_folder, 'test_length')
+
+        self.train_score_memory = []
+        self.train_score_save_path = os.path.join(save_folder, 'train_score')
+
+        self.train_length_memory = []
+        self.train_length_save_path = os.path.join(save_folder, 'train_length')
 
     def choose_action(self, history, epsilon=None):
         if epsilon is not None:
@@ -147,7 +153,7 @@ class DQNSolver():
         last_life = 0
         while done:
             action = self.choose_action(history, None)
-            if terminal:
+            if terminal: ## There is error when it is just started. So do action = 1 at first
                action = 1
             next_state, reward, done, life = self.valid_env.step(action)
             history.push(next_state)
@@ -188,8 +194,6 @@ class DQNSolver():
             history.push(next_state)
             score = score + reward
             count = count + 1
-            if count>100:
-                break
         self.env.close()
         frames[0].save('Breakout_result.gif', format='GIF', append_images=frames[1:], save_all=True, duration=0.0001)
         print("save picture -- Breakout_result.gif")
@@ -204,12 +208,15 @@ class DQNSolver():
         done = False
 
         ##Report
-        scores = deque(maxlen=10)
-        train_score = 0
+        train_scores = deque(maxlen=10)
+        train_lengths = deque(maxlen=10)
         episode = 0
         max_score = 0
+
+        ##If it is done everytime init value
+        train_score = 0
+        train_length = 0
         last_life = 0
-        count = 0
         terminal = True
 
         try:
@@ -223,22 +230,25 @@ class DQNSolver():
                 if done:
                     state = self.env.reset()
                     history = historyDataset(self.history_size, state)
-                    scores.append(train_score)
-                    train_score = 0
-                    last_life = 0
+                    train_scores.append(train_score)
+                    train_lengths.append(train_length)
                     episode += 1
-                    count = 0
+
+                    ##If it is done everytime init value
+                    train_score = 0
+                    train_length = 0
+                    last_life = 0
                     terminal = True
 
                 action = self.choose_action(history, self.get_epsilon(step))
-                if terminal:
+                if terminal: ## There is error when it is just started. So do action = 1 at first
                     action = 1
                 next_state, reward, done, life = self.env.step(action)
                 state = history.get_state()
                 history.push(next_state)
                 next_state = history.get_state()
                 life = life['ale.lives']
-                count = count + 1
+                train_length = train_length + 1
 
                 ## Terminal options
                 if life < last_life:
@@ -254,28 +264,35 @@ class DQNSolver():
                 train_score = train_score + reward
 
                 if step > self.eval_steps and step % self.eval_freq == 0:
-                    mean_score = np.mean(scores)
+                    train_mean_score = np.mean(train_scores)
+                    train_mean_length = np.mean(train_lengths)
+                    self.train_score_memory.append(train_mean_score)
+                    self.train_length_memory.append(train_mean_length)
 
-                    score, length = self.valid_run()
-                    self.score_memory.append(score)
-                    self.length_memory.append(length)
-                    if score > max_score:
-                        max_score = score
+                    np.save(self.train_score_save_path, self.train_score_memory)
+                    np.save(self.train_length_save_path, self.train_length_memory)
+
+
+                    valid_score, valid_length = self.valid_run()
+                    self.test_score_memory.append(valid_score)
+                    self.test_length_memory.append(valid_length)
+                    if valid_score > max_score:
+                        max_score = valid_score
                         self.save_model()
 
-                    np.save(self.score_save_path, self.score_memory)
-                    np.save(self.length_save_path, self.length_memory)
+                    np.save(self.test_score_save_path, self.test_score_memory)
+                    np.save(self.test_length_save_path, self.test_length_memory)
 
                     progress_bar.set_postfix_str(
                         '[Episode %s] - train_score : %.2f, test_score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode,
-                                                                                                                    score,
-                                                                                                                    mean_score,
+                                                                                                                    train_mean_score,
+                                                                                                                    valid_score,
                                                                                                                     max_score,
                                                                                                                     self.get_epsilon(step)))
                     logging.debug(
                         '[Episode %s] - train_score : %.2f, test_score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode,
-                                                                                                                    score,
-                                                                                                                    mean_score,
+                                                                                                                    train_mean_score,
+                                                                                                                    valid_score,
                                                                                                                     max_score,
                                                                                                                     self.get_epsilon(step)))
         except Exception as e:
