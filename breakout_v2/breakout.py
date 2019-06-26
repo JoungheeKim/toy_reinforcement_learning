@@ -12,6 +12,7 @@ from properties import build_parser, CONSOLE_LEVEL, LOG_FILE, LOGFILE_LEVEL
 from repository import historyDataset, memoryDataset
 import sys
 import traceback
+from PIL import Image
 
 
 
@@ -20,6 +21,7 @@ class DQNSolver():
     def __init__(self, config):
         self.device = config.device
         self.env = gym.make(config.env)
+        self.valid_env = gym.make(config.env)
         self.memory_size = config.memory_size
         self.update_freq = config.update_freq
         self.learn_start = config.learn_start
@@ -37,8 +39,8 @@ class DQNSolver():
         self.max_steps = config.max_steps
         self.eval_freq = config.eval_freq
         self.eval_steps = config.eval_steps
+        self.eval_episod = config.eval_episod
         self.target_update = config.target_update
-
 
         ##Breakout Setting
         self.resize_unit = (84, 84)
@@ -72,19 +74,26 @@ class DQNSolver():
         self.save_path = os.path.join(save_folder, 'model.pkl')
 
         self.score_memory = []
-        self.score_save_path = os.path.join(save_folder, 'score')
+        self.score_save_path = os.path.join(save_folder, 'score_text')
 
-
-
+        self.length_memory = []
+        self.length_save_path = os.path.join(save_folder, 'length_test')
 
     def choose_action(self, history, epsilon=None):
-        if epsilon is not None and np.random.random() <= epsilon:
-            return self.env.action_space.sample()
+        if epsilon is not None:
+            if np.random.random() <= epsilon:
+                return self.env.action_space.sample()
+            else:
+                with torch.no_grad():
+                    state = torch.tensor(history.get_state(), dtype=torch.float).unsqueeze(0).to(self.device)
+                    action = self.target_model(state) if self.device == 'cpu' else self.target_model(state).cpu()
+                    return int(action.max(1).indices.numpy())
         else:
             with torch.no_grad():
                 state = torch.tensor(history.get_state(), dtype=torch.float).unsqueeze(0).to(self.device)
-                action = self.target_model(state) if self.device == 'cpu' else self.target_model(state).cpu()
+                action = self.policy_model(state) if self.device == 'cpu' else self.policy_model(state).cpu()
                 return int(action.max(1).indices.numpy())
+
 
     def get_epsilon(self, t):
         epsilon =  self.eps_end + max(0, (self.ep - self.eps_end)*(self.eps_endt - max(0, t - self.learn_start)) /self.eps_endt )
@@ -123,6 +132,71 @@ class DQNSolver():
         param_groups['model_state_dict'] = self.policy_model.state_dict()
         torch.save(param_groups, self.save_path)
 
+    def load_model(self):
+        checkpoint = torch.load(self.save_path)
+        self.policy_model.load_state_dict(checkpoint['model_state_dict'])
+        self.target_model.load_state_dict(checkpoint['model_state_dict'])
+
+    def valid_run(self):
+        state = self.valid_env.reset()
+        history = historyDataset(self.history_size, state)
+        score = 0
+        count = 0
+        terminal = True
+        done = False
+        last_life = 0
+        while done:
+            action = self.choose_action(history, None)
+            if terminal:
+               action = 1
+            next_state, reward, done, life = self.valid_env.step(action)
+            history.push(next_state)
+            score += reward
+            life = life['ale.lives']
+            count = count + 1
+
+            ## Terminal options
+            if life < last_life:
+                terminal = True
+            else:
+                terminal = False
+            last_life = life
+
+        return score, count
+
+    def render_policy_net(self):
+        self.load_model()
+
+        state = self.env.reset()
+        history = historyDataset(self.history_size, state)
+        score = 0
+        count = 0
+        raw_frames = []
+        frames = []
+        done = False
+        last_life = 0
+        while not done:
+            img = self.env.render(mode='rgb_array')
+            raw_frames.append(img)
+            img = Image.fromarray(img)
+            frames.append(img)
+            action = self.choose_action(history, None)
+            next_state, reward, done, life = self.env.step(action)
+            if last_life != int(life['ale.lives']):
+                last_life = int(life['ale.lives'])
+                print("[life] : ", last_life)
+            history.push(next_state)
+            score = score + reward
+            count = count + 1
+            if count>100:
+                break
+        self.env.close()
+        frames[0].save('Breakout_result.gif', format='GIF', append_images=frames[1:], save_all=True, duration=0.0001)
+        print("save picture -- Breakout_result.gif")
+        print("score", score)
+        print("count", count)
+
+
     def run(self):
         progress_bar = tqdm(range(self.max_steps))
         state = self.env.reset()
@@ -131,10 +205,12 @@ class DQNSolver():
 
         ##Report
         scores = deque(maxlen=10)
-        score = 0
+        train_score = 0
         episode = 0
         max_score = 0
         last_life = 0
+        count = 0
+        terminal = True
 
         try:
             for step in progress_bar:
@@ -147,25 +223,22 @@ class DQNSolver():
                 if done:
                     state = self.env.reset()
                     history = historyDataset(self.history_size, state)
-                    scores.append(score)
-                    if score > max_score:
-                        max_score = score
-                        self.save_model()
-                    score = 0
+                    scores.append(train_score)
+                    train_score = 0
                     last_life = 0
                     episode += 1
-
-                    if episode % 100 == 0:
-                        self.score_memory.append(np.mean(scores))
-                        if episode % 1000 == 0:
-                            np.save(self.score_save_path, self.score_memory)
+                    count = 0
+                    terminal = True
 
                 action = self.choose_action(history, self.get_epsilon(step))
+                if terminal:
+                    action = 1
                 next_state, reward, done, life = self.env.step(action)
                 state = history.get_state()
                 history.push(next_state)
                 next_state = history.get_state()
                 life = life['ale.lives']
+                count = count + 1
 
                 ## Terminal options
                 if life < last_life:
@@ -174,23 +247,37 @@ class DQNSolver():
                     terminal = False
                 last_life = life
 
-
                 self.memory.push(state, action, reward, next_state, done, life, terminal)
                 if step > self.learn_start and step % self.update_freq == 0:
                     self.replay(self.batch_size)
 
-                score += 1 if reward > 0 else 0
+                train_score = train_score + reward
 
                 if step > self.eval_steps and step % self.eval_freq == 0:
                     mean_score = np.mean(scores)
+
+                    score, length = self.valid_run()
+                    self.score_memory.append(score)
+                    self.length_memory.append(length)
+                    if score > max_score:
+                        max_score = score
+                        self.save_model()
+
+                    np.save(self.score_save_path, self.score_memory)
+                    np.save(self.length_save_path, self.length_memory)
+
                     progress_bar.set_postfix_str(
-                        '[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
-                                                                                           max_score,
-                                                                                           self.get_epsilon(step)))
-                    logging.debug('[Episode %s] - score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode, mean_score,
-                                                                                                     max_score,
-                                                                                                     self.get_epsilon(
-                                                                                                         step)))
+                        '[Episode %s] - train_score : %.2f, test_score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode,
+                                                                                                                    score,
+                                                                                                                    mean_score,
+                                                                                                                    max_score,
+                                                                                                                    self.get_epsilon(step)))
+                    logging.debug(
+                        '[Episode %s] - train_score : %.2f, test_score : %.2f, max_score : %.2f, epsilon : %.2f' % (episode,
+                                                                                                                    score,
+                                                                                                                    mean_score,
+                                                                                                                    max_score,
+                                                                                                                    self.get_epsilon(step)))
         except Exception as e:
             # Get current system exception
             ex_type, ex_value, ex_traceback = sys.exc_info()
@@ -213,3 +300,5 @@ if __name__ == '__main__':
     config.device = device
     agent = DQNSolver(config)
     agent.run()
+
+    #agent.render_policy_net()
