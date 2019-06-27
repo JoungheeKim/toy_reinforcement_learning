@@ -39,7 +39,6 @@ class DQNSolver():
         self.max_steps = config.max_steps
         self.eval_freq = config.eval_freq
         self.eval_steps = config.eval_steps
-        self.eval_episod = config.eval_episod
         self.target_update = config.target_update
 
         ##Breakout Setting
@@ -145,18 +144,18 @@ class DQNSolver():
 
     def valid_run(self):
         state = self.valid_env.reset()
-        history = historyDataset(self.history_size, state)
+        valid_history = historyDataset(self.history_size, state)
         score = 0
         count = 0
         terminal = True
         done = False
         last_life = 0
-        while done:
-            action = self.choose_action(history, None)
+        while not done:
+            action = self.choose_action(valid_history, None)
             if terminal: ## There is error when it is just started. So do action = 1 at first
                action = 1
             next_state, reward, done, life = self.valid_env.step(action)
-            history.push(next_state)
+            valid_history.push(next_state)
             score += reward
             life = life['ale.lives']
             count = count + 1
