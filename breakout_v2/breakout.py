@@ -179,6 +179,7 @@ class DQNSolver():
         raw_frames = []
         frames = []
         done = False
+        terminal = True
         last_life = 0
         while not done:
             img = self.env.render(mode='rgb_array')
@@ -187,9 +188,6 @@ class DQNSolver():
             frames.append(img)
             action = self.choose_action(history, None)
             next_state, reward, done, life = self.env.step(action)
-            if last_life != int(life['ale.lives']):
-                last_life = int(life['ale.lives'])
-                print("[life] : ", last_life)
             history.push(next_state)
             score = score + reward
             count = count + 1

@@ -27,6 +27,6 @@ def build_parser():
 
     parser.add_argument("--agent_type", dest="agent_type", metavar="agent_type", default="DQN_ln")
     parser.add_argument("--max_steps", dest="max_steps", metavar="max_steps", default=10000000)
-    parser.add_argument("--eval_freq", dest="eval_freq", metavar="eval_freq", default=5000)
+    parser.add_argument("--eval_freq", dest="eval_freq", metavar="eval_freq", default=10000)
     parser.add_argument("--eval_steps", dest="eval_steps", metavar="eval_steps", default=50000)
     return parser
