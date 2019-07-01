@@ -27,11 +27,12 @@ class DQNSolver():
         self.learn_start = config.learn_start
         self.history_size = config.history_size
 
-
         self.batch_size = config.batch_size
         self.ep = config.ep
         self.eps_end = config.eps_end
         self.eps_endt = config.eps_endt
+        self.eps_start = self.learn_start
+
         self.lr = config.lr
         self.discount = config.discount
 
@@ -84,6 +85,16 @@ class DQNSolver():
         self.train_length_memory = []
         self.train_length_save_path = os.path.join(save_folder, 'train_length')
 
+        ##중간시작
+        self.start_steps = config.start_steps
+        self.learn_start = self.learn_start + self.start_steps
+        self.eval_steps = self.eval_steps + self.start_steps
+        self.test_file = os.path.join(config.test_path, 'model.pkl')
+
+        if config.pretrained:
+            self.load_model()
+
+
     def choose_action(self, history, epsilon=None):
         if epsilon is not None:
             if np.random.random() <= epsilon:
@@ -101,7 +112,7 @@ class DQNSolver():
 
 
     def get_epsilon(self, t):
-        epsilon =  self.eps_end + max(0, (self.ep - self.eps_end)*(self.eps_endt - max(0, t - self.learn_start)) /self.eps_endt )
+        epsilon =  self.eps_end + max(0, (self.ep - self.eps_end)*(self.eps_endt - max(0, t - self.eps_start)) /self.eps_endt )
         return epsilon
 
     def replay(self, batch_size):
@@ -138,7 +149,7 @@ class DQNSolver():
         torch.save(param_groups, self.save_path)
 
     def load_model(self):
-        checkpoint = torch.load(self.save_path)
+        checkpoint = torch.load(self.test_file)
         self.policy_model.load_state_dict(checkpoint['model_state_dict'])
         self.target_model.load_state_dict(checkpoint['model_state_dict'])
 
@@ -182,15 +193,25 @@ class DQNSolver():
         terminal = True
         last_life = 0
         while not done:
-            img = self.env.render(mode='rgb_array')
-            raw_frames.append(img)
-            img = Image.fromarray(img)
-            frames.append(img)
             action = self.choose_action(history, None)
+            if terminal: ## There is error when it is just started. So do action = 1 at first
+               action = 1
             next_state, reward, done, life = self.env.step(action)
             history.push(next_state)
-            score = score + reward
+
+            img = Image.fromarray(next_state)
+            frames.append(img)
+
+            score += reward
+            life = life['ale.lives']
             count = count + 1
+
+            ## Terminal options
+            if life < last_life:
+                terminal = True
+            else:
+                terminal = False
+            last_life = life
         self.env.close()
         frames[0].save('Breakout_result.gif', format='GIF', append_images=frames[1:], save_all=True, duration=0.0001)
         print("save picture -- Breakout_result.gif")
@@ -199,7 +220,7 @@ class DQNSolver():
 
 
     def run(self):
-        progress_bar = tqdm(range(self.max_steps))
+        progress_bar = tqdm(range(self.start_steps, self.max_steps))
         state = self.env.reset()
         history = historyDataset(self.history_size, state)
         done = False
@@ -313,6 +334,7 @@ if __name__ == '__main__':
     device = torch.device("cuda" if torch.cuda.is_available() and config.device in ["gpu",'cuda'] else "cpu")
     config.device = device
     agent = DQNSolver(config)
-    agent.run()
-
-    #agent.render_policy_net()
+    if config.mode == "train":
+        agent.run()
+    if config.mode =="test":
+        agent.render_policy_net()
