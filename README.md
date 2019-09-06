@@ -7,5 +7,5 @@ Thanks to OpenAI, They freely give us wonderful example environment which is cal
 ### Result Report
 1. cartpole
   Survived 195 steps. you can check the easy [python code](https://github.com/JoungheeKim/toy_reinforcement_learning/blob/master/cartpole/cartpole_tutorial.ipynb)
-  [](https://github.com/JoungheeKim/toy_reinforcement_learning/blob/master/cartpole/CartPole_result.gif)
+  ![alt text](https://github.com/JoungheeKim/toy_reinforcement_learning/blob/master/cartpole/CartPole_result.gif)
 2. breakout v2 
