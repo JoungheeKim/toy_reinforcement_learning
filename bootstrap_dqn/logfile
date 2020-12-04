@@ -1,0 +1,206 @@
+DEBUG:root:[Episode 3955] - train_score : 0.30, test_score : 0.00, max_score : 0.00, epsilon : 0.51
+DEBUG:root:[Episode 4723] - train_score : 0.00, test_score : 0.00, max_score : 0.00, epsilon : 0.42
+DEBUG:root:[Episode 5511] - train_score : 0.00, test_score : 0.00, max_score : 0.00, epsilon : 0.33
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : forward() missing 1 required positional argument: 'k'
+WARNING:root:File : breakout.py , Line : 278, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 133, Func.Name : replay, Message : next_state_action_values = self.policy_model(next_state)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : max() received an invalid combination of arguments - got (list, dim=int), but expected one of:
+ * (Tensor input)
+ * (Tensor input, name dim, bool keepdim, *, tuple of Tensors out)
+ * (Tensor input, Tensor other, *, Tensor out)
+ * (Tensor input, int dim, bool keepdim, *, tuple of Tensors out)
+
+WARNING:root:File : breakout.py , Line : 278, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 134, Func.Name : replay, Message : next_state_value = torch.max(next_state_action_values, dim=1).values.view(-1, 1)
+WARNING:root:Exception type : AttributeError 
+WARNING:root:Exception message : 'list' object has no attribute 'gather'
+WARNING:root:File : breakout.py , Line : 287, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 138, Func.Name : replay, Message : state_action_values = self.policy_model(state).gather(1, action)
+WARNING:root:Exception type : AttributeError 
+WARNING:root:Exception message : 'list' object has no attribute 'cpu'
+WARNING:root:File : breakout.py , Line : 268, Func.Name : run, Message : action = self.choose_action(history, self.get_epsilon(step))
+WARNING:root:File : breakout.py , Line : 105, Func.Name : choose_action, Message : action = self.target_model(state) if self.device == 'cpu' else self.target_model(state).cpu()
+WARNING:root:Exception type : AttributeError 
+WARNING:root:Exception message : 'list' object has no attribute 'gather'
+WARNING:root:File : breakout.py , Line : 303, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 156, Func.Name : replay, Message : state_action_values = self.policy_model(state).gather(1, action)
+WARNING:root:Exception type : AttributeError 
+WARNING:root:Exception message : 'list' object has no attribute 'gather'
+WARNING:root:File : breakout.py , Line : 303, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 156, Func.Name : replay, Message : state_action_values = self.policy_model(state).gather(1, action)
+WARNING:root:Exception type : ValueError 
+WARNING:root:Exception message : None is not a valid value for reduction
+WARNING:root:File : breakout.py , Line : 311, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 159, Func.Name : replay, Message : loss = F.smooth_l1_loss(state_action_value, target_state_value, reduction=None)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/functional.py , Line : 2607, Func.Name : smooth_l1_loss, Message : return torch._C._nn.smooth_l1_loss(expanded_input, expanded_target, _Reduction.get_enum(reduction), beta)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/_reduction.py , Line : 20, Func.Name : get_enum, Message : raise ValueError("{} is not a valid value for reduction".format(reduction))
+WARNING:root:Exception type : RuntimeError 
+WARNING:root:Exception message : The size of tensor a (0) must match the size of tensor b (32) at non-singleton dimension 0
+WARNING:root:File : breakout.py , Line : 314, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 160, Func.Name : replay, Message : loss = mask[:head_num] * loss
+WARNING:root:Exception type : AttributeError 
+WARNING:root:Exception message : 'list' object has no attribute 'cpu'
+WARNING:root:File : breakout.py , Line : 326, Func.Name : run, Message : valid_score, valid_length = self.valid_run()
+WARNING:root:File : breakout.py , Line : 189, Func.Name : valid_run, Message : action = self.choose_action(valid_history)
+WARNING:root:File : breakout.py , Line : 120, Func.Name : choose_action, Message : action = self.policy_model(state) if self.device == 'cpu' else self.policy_model(state).cpu()
+DEBUG:root:[Episode 611] - train_score : 1.00, test_score : 3.00, max_score : 3.00, epsilon : 0.95
+DEBUG:root:[Episode 910] - train_score : 0.80, test_score : 0.00, max_score : 3.00, epsilon : 0.90
+DEBUG:root:[Episode 1196] - train_score : 1.70, test_score : 0.00, max_score : 3.00, epsilon : 0.85
+DEBUG:root:[Episode 1482] - train_score : 1.10, test_score : 0.00, max_score : 3.00, epsilon : 0.80
+DEBUG:root:[Episode 608] - train_score : 1.00, test_score : 0.00, max_score : 0.00, epsilon : 0.95
+DEBUG:root:[Episode 908] - train_score : 1.20, test_score : 0.00, max_score : 0.00, epsilon : 0.90
+DEBUG:root:[Episode 1202] - train_score : 1.60, test_score : 0.00, max_score : 0.00, epsilon : 0.85
+DEBUG:root:[Episode 1489] - train_score : 1.20, test_score : 0.00, max_score : 0.00, epsilon : 0.80
+WARNING:root:Exception type : AttributeError 
+WARNING:root:Exception message : 'list' object has no attribute 'state'
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 54, Func.Name : sample, Message : state = torch.tensor(batch.state, dtype=torch.float)
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : stack(): argument 'tensors' (position 1) must be tuple of Tensors, not Tensor
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 140, Func.Name : replay, Message : state = torch.stack(batch.state).to(self.device)
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : len() of unsized object
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 57, Func.Name : sample, Message : reward = torch.tensor(batch.reward, dtype=torch.float)
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : len() of unsized object
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 59, Func.Name : sample, Message : reward = torch.tensor(batch.reward, dtype=torch.float)
+WARNING:root:Exception type : AttributeError 
+WARNING:root:Exception message : 'tuple' object has no attribute 'shape'
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 55, Func.Name : sample, Message : print(batch.state.shape)
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : len() of unsized object
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 60, Func.Name : sample, Message : reward = torch.tensor(batch.reward, dtype=torch.float)
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : len() of unsized object
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 57, Func.Name : sample, Message : reward = torch.tensor(batch.reward, dtype=torch.float)
+WARNING:root:Exception type : ValueError 
+WARNING:root:Exception message : zero-dimensional arrays cannot be concatenated
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 57, Func.Name : sample, Message : reward = torch.tensor(np.concatenate(batch.reward), dtype=torch.float)
+WARNING:root:File : <__array_function__ internals> , Line : 5, Func.Name : concatenate, Message : 
+WARNING:root:Exception type : UnboundLocalError 
+WARNING:root:Exception message : local variable 'reward' referenced before assignment
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 55, Func.Name : sample, Message : print(reward)
+WARNING:root:Exception type : ValueError 
+WARNING:root:Exception message : zero-dimensional arrays cannot be concatenated
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 137, Func.Name : replay, Message : batch = self.memory.sample(batch_size)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/repository.py , Line : 59, Func.Name : sample, Message : reward = torch.tensor(np.concatenate(batch.reward), dtype=torch.float)
+WARNING:root:File : <__array_function__ internals> , Line : 5, Func.Name : concatenate, Message : 
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : stack(): argument 'tensors' (position 1) must be tuple of Tensors, not Tensor
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 140, Func.Name : replay, Message : state = torch.stack(batch.state).to(self.device)
+WARNING:root:Exception type : TypeError 
+WARNING:root:Exception message : stack(): argument 'tensors' (position 1) must be tuple of Tensors, not Tensor
+WARNING:root:File : breakout.py , Line : 320, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 140, Func.Name : replay, Message : state = torch.stack(batch.state).to(self.device)
+WARNING:root:Exception type : RuntimeError 
+WARNING:root:Exception message : Expected 4-dimensional input for 4-dimensional weight [32, 4, 8, 8], but got 1-dimensional input of size [32] instead
+WARNING:root:File : breakout.py , Line : 335, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 169, Func.Name : replay, Message : next_state_action_values = self.policy_model(next_state)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 36, Func.Name : forward, Message : core_cache = self._core(x)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 27, Func.Name : _core, Message : return self.core_net(x)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 60, Func.Name : forward, Message : x = F.relu(self.conv1(x))
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 423, Func.Name : forward, Message : return self._conv_forward(input, self.weight)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 419, Func.Name : _conv_forward, Message : return F.conv2d(input, weight, self.bias, self.stride,
+WARNING:root:Exception type : RuntimeError 
+WARNING:root:Exception message : Expected 4-dimensional input for 4-dimensional weight [32, 4, 8, 8], but got 1-dimensional input of size [32] instead
+WARNING:root:File : breakout.py , Line : 337, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 171, Func.Name : replay, Message : next_state_action_values = self.policy_model(next_state)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 36, Func.Name : forward, Message : core_cache = self._core(x)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 27, Func.Name : _core, Message : return self.core_net(x)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 60, Func.Name : forward, Message : x = F.relu(self.conv1(x))
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 423, Func.Name : forward, Message : return self._conv_forward(input, self.weight)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 419, Func.Name : _conv_forward, Message : return F.conv2d(input, weight, self.bias, self.stride,
+WARNING:root:Exception type : RuntimeError 
+WARNING:root:Exception message : Expected 4-dimensional input for 4-dimensional weight [32, 4, 8, 8], but got 1-dimensional input of size [32] instead
+WARNING:root:File : breakout.py , Line : 337, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 171, Func.Name : replay, Message : next_state_action_values = self.policy_model(next_state)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 36, Func.Name : forward, Message : core_cache = self._core(x)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 27, Func.Name : _core, Message : return self.core_net(x)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 60, Func.Name : forward, Message : x = F.relu(self.conv1(x))
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 423, Func.Name : forward, Message : return self._conv_forward(input, self.weight)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 419, Func.Name : _conv_forward, Message : return F.conv2d(input, weight, self.bias, self.stride,
+WARNING:root:Exception type : RuntimeError 
+WARNING:root:Exception message : Expected 4-dimensional input for 4-dimensional weight [32, 4, 8, 8], but got 1-dimensional input of size [32] instead
+WARNING:root:File : breakout.py , Line : 337, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 171, Func.Name : replay, Message : next_state_action_values = self.policy_model(next_state)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 36, Func.Name : forward, Message : core_cache = self._core(x)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 27, Func.Name : _core, Message : return self.core_net(x)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 60, Func.Name : forward, Message : x = F.relu(self.conv1(x))
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 423, Func.Name : forward, Message : return self._conv_forward(input, self.weight)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 419, Func.Name : _conv_forward, Message : return F.conv2d(input, weight, self.bias, self.stride,
+WARNING:root:Exception type : RuntimeError 
+WARNING:root:Exception message : Expected 4-dimensional input for 4-dimensional weight [32, 4, 8, 8], but got 1-dimensional input of size [32] instead
+WARNING:root:File : breakout.py , Line : 337, Func.Name : run, Message : self.replay(self.batch_size)
+WARNING:root:File : breakout.py , Line : 171, Func.Name : replay, Message : next_state_action_values = self.policy_model(next_state)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 36, Func.Name : forward, Message : core_cache = self._core(x)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 27, Func.Name : _core, Message : return self.core_net(x)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /code/gitRepo/toy_reinforcement_learning/bootstrap_dqn/model.py , Line : 60, Func.Name : forward, Message : x = F.relu(self.conv1(x))
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/module.py , Line : 727, Func.Name : _call_impl, Message : result = self.forward(*input, **kwargs)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 423, Func.Name : forward, Message : return self._conv_forward(input, self.weight)
+WARNING:root:File : /opt/conda/lib/python3.8/site-packages/torch/nn/modules/conv.py , Line : 419, Func.Name : _conv_forward, Message : return F.conv2d(input, weight, self.bias, self.stride,
+DEBUG:root:[Episode 607] - train_score : 0.40, test_score : 3.00, max_score : 3.00, epsilon : 0.95
+DEBUG:root:[Episode 902] - train_score : 1.40, test_score : 2.00, max_score : 3.00, epsilon : 0.90
+DEBUG:root:[Episode 1179] - train_score : 2.70, test_score : 9.00, max_score : 9.00, epsilon : 0.85
+DEBUG:root:[Episode 1457] - train_score : 2.70, test_score : 0.00, max_score : 9.00, epsilon : 0.80
+DEBUG:root:[Episode 1743] - train_score : 0.90, test_score : 0.00, max_score : 9.00, epsilon : 0.75
+DEBUG:root:[Episode 2018] - train_score : 0.80, test_score : 1.00, max_score : 9.00, epsilon : 0.70
+DEBUG:root:[Episode 2280] - train_score : 1.50, test_score : 11.00, max_score : 11.00, epsilon : 0.65
+DEBUG:root:[Episode 2502] - train_score : 3.50, test_score : 0.00, max_score : 11.00, epsilon : 0.60
+DEBUG:root:[Episode 2753] - train_score : 0.90, test_score : 0.00, max_score : 11.00, epsilon : 0.55
+DEBUG:root:[Episode 3007] - train_score : 1.70, test_score : 11.00, max_score : 11.00, epsilon : 0.51
+DEBUG:root:[Episode 3235] - train_score : 0.90, test_score : 3.00, max_score : 11.00, epsilon : 0.46
+DEBUG:root:[Episode 3475] - train_score : 1.50, test_score : 9.00, max_score : 11.00, epsilon : 0.41
+DEBUG:root:[Episode 3732] - train_score : 3.60, test_score : 3.00, max_score : 11.00, epsilon : 0.36
+DEBUG:root:[Episode 3967] - train_score : 4.90, test_score : 5.00, max_score : 11.00, epsilon : 0.31
+DEBUG:root:[Episode 4164] - train_score : 4.60, test_score : 0.00, max_score : 11.00, epsilon : 0.26
+DEBUG:root:[Episode 4383] - train_score : 4.60, test_score : 18.00, max_score : 18.00, epsilon : 0.21
+DEBUG:root:[Episode 4489] - train_score : 10.30, test_score : 18.00, max_score : 18.00, epsilon : 0.16
+DEBUG:root:[Episode 4580] - train_score : 16.20, test_score : 15.00, max_score : 18.00, epsilon : 0.11
+DEBUG:root:[Episode 4666] - train_score : 14.50, test_score : 8.00, max_score : 18.00, epsilon : 0.06
+DEBUG:root:[Episode 4760] - train_score : 19.80, test_score : 19.00, max_score : 19.00, epsilon : 0.01
+DEBUG:root:[Episode 4839] - train_score : 21.20, test_score : 13.00, max_score : 19.00, epsilon : 0.01
+DEBUG:root:[Episode 4933] - train_score : 9.30, test_score : 8.00, max_score : 19.00, epsilon : 0.01
+DEBUG:root:[Episode 5013] - train_score : 14.80, test_score : 19.00, max_score : 19.00, epsilon : 0.01
+DEBUG:root:[Episode 5090] - train_score : 21.10, test_score : 32.00, max_score : 32.00, epsilon : 0.01
+DEBUG:root:[Episode 5166] - train_score : 23.30, test_score : 13.00, max_score : 32.00, epsilon : 0.01
+DEBUG:root:[Episode 5244] - train_score : 16.30, test_score : 1.00, max_score : 32.00, epsilon : 0.01
+DEBUG:root:[Episode 5394] - train_score : 9.90, test_score : 3.00, max_score : 32.00, epsilon : 0.01
+DEBUG:root:[Episode 5539] - train_score : 11.50, test_score : 6.00, max_score : 32.00, epsilon : 0.01
+DEBUG:root:[Episode 5648] - train_score : 24.30, test_score : 16.00, max_score : 32.00, epsilon : 0.01
+DEBUG:root:[Episode 5717] - train_score : 16.90, test_score : 0.00, max_score : 32.00, epsilon : 0.01
+DEBUG:root:[Episode 5849] - train_score : 16.60, test_score : 11.00, max_score : 32.00, epsilon : 0.01
